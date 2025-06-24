@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
@@ -28,9 +29,9 @@ func NewClient(apiKey string) (*Client, error) {
 	// Use Gemini 1.5 Flash for faster responses
 	model := client.GenerativeModel("gemini-1.5-flash")
 	
-	// Configure model parameters
-	model.SetTemperature(0.3)
-	model.SetMaxOutputTokens(200)
+	// Configure model parameters for concise output
+	model.SetTemperature(0.2) // Lower temperature for more consistent output
+	model.SetMaxOutputTokens(100) // Limit output tokens per endpoint
 
 	return &Client{
 		client: client,
@@ -43,90 +44,181 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-// SummarizeEndpoint generates a summary for a single endpoint
-func (c *Client) SummarizeEndpoint(ctx context.Context, endpoint *models.Endpoint) error {
-	prompt := buildPrompt(endpoint)
+// SummarizeEndpoints processes multiple endpoints efficiently
+func (c *Client) SummarizeEndpoints(ctx context.Context, endpoints []*models.Endpoint) error {
+	// Group endpoints into batches for efficient processing
+	batchSize := 5 // Process 5 endpoints at once
+	batches := batchEndpoints(endpoints, batchSize)
+	
+	// Process batches concurrently with rate limiting
+	semaphore := make(chan struct{}, 3) // Max 3 concurrent requests
+	var wg sync.WaitGroup
+	
+	for i, batch := range batches {
+		wg.Add(1)
+		go func(batchIndex int, batchEndpoints []*models.Endpoint) {
+			defer wg.Done()
+			
+			// Rate limiting: wait between batches
+			if batchIndex > 0 {
+				time.Sleep(2 * time.Second) // Reduced from 4 seconds
+			}
+			
+			// Acquire semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+			
+			// Process batch
+			if err := c.summarizeBatch(ctx, batchEndpoints); err != nil {
+				fmt.Printf("Warning: Failed to summarize batch %d: %v\n", batchIndex, err)
+			}
+		}(i, batch)
+	}
+	
+	wg.Wait()
+	return nil
+}
+
+// summarizeBatch processes a batch of endpoints in a single request
+func (c *Client) summarizeBatch(ctx context.Context, endpoints []*models.Endpoint) error {
+	if len(endpoints) == 0 {
+		return nil
+	}
+	
+	// Build optimized batch prompt
+	prompt := buildBatchPrompt(endpoints)
 	
 	resp, err := c.model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
 		return fmt.Errorf("failed to generate content: %w", err)
 	}
-
-	summary := extractSummary(resp)
-	endpoint.Summary = summary
+	
+	// Parse batch response
+	summaries := parseBatchResponse(resp)
+	
+	// Assign summaries to endpoints
+	for i, endpoint := range endpoints {
+		if i < len(summaries) {
+			endpoint.Summary = summaries[i]
+		} else {
+			endpoint.Summary = "Summary unavailable"
+		}
+	}
 	
 	return nil
 }
 
-// SummarizeEndpoints processes multiple endpoints with rate limiting
-func (c *Client) SummarizeEndpoints(ctx context.Context, endpoints []*models.Endpoint) error {
-	// Rate limiting: 15 requests per minute for free tier
-	ticker := time.NewTicker(4 * time.Second)
-	defer ticker.Stop()
-
+// buildBatchPrompt creates an optimized prompt for multiple endpoints
+func buildBatchPrompt(endpoints []*models.Endpoint) string {
+	var builder strings.Builder
+	
+	builder.WriteString("Analyze these REST API endpoints. For each, provide a one-line summary (max 50 chars).\n")
+	builder.WriteString("Format: [N] Summary\n\n")
+	
 	for i, endpoint := range endpoints {
-		if i > 0 {
-			select {
-			case <-ticker.C:
-				// Continue after rate limit delay
-			case <-ctx.Done():
-				return ctx.Err()
+		// Include only essential information to reduce tokens
+		builder.WriteString(fmt.Sprintf("[%d] %s %s\n", i+1, endpoint.Method, endpoint.Path))
+		
+		// Extract only the most relevant code lines
+		relevantCode := extractRelevantCode(endpoint.RawCode)
+		if relevantCode != "" {
+			builder.WriteString(fmt.Sprintf("Code: %s\n", relevantCode))
+		}
+		builder.WriteString("\n")
+	}
+	
+	builder.WriteString("Summaries:")
+	
+	return builder.String()
+}
+
+// extractRelevantCode extracts only the most relevant part of the code
+func extractRelevantCode(rawCode string) string {
+	lines := strings.Split(rawCode, "\n")
+	var relevant []string
+	
+	// Look for function definitions, return statements, or key operations
+	keywords := []string{"def ", "function", "return", "create", "update", "delete", "get", "post", "find", "save"}
+	
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		
+		// Check if line contains relevant keywords
+		lower := strings.ToLower(trimmed)
+		for _, keyword := range keywords {
+			if strings.Contains(lower, keyword) {
+				relevant = append(relevant, trimmed)
+				if len(relevant) >= 3 { // Limit to 3 most relevant lines
+					break
+				}
 			}
 		}
-
-		if err := c.SummarizeEndpoint(ctx, endpoint); err != nil {
-			// Log error but continue with other endpoints
-			fmt.Printf("Warning: Failed to summarize endpoint %s %s: %v\n", 
-				endpoint.Method, endpoint.Path, err)
-			endpoint.Summary = "Failed to generate summary"
+	}
+	
+	// If no relevant lines found, take the first non-empty line
+	if len(relevant) == 0 && len(lines) > 0 {
+		for _, line := range lines {
+			if trimmed := strings.TrimSpace(line); trimmed != "" {
+				relevant = append(relevant, trimmed)
+				break
+			}
 		}
 	}
-
-	return nil
+	
+	return strings.Join(relevant, "; ")
 }
 
-// buildPrompt creates the prompt for the Gemini API
-func buildPrompt(endpoint *models.Endpoint) string {
-	return fmt.Sprintf(`Analyze this REST API endpoint and provide a concise summary of what it does.
-
-Framework: %s
-HTTP Method: %s
-Path: %s
-Function/Handler: %s
-
-Code:
-%s
-
-Provide a brief, one-line summary (max 100 characters) of what this endpoint does. Focus on the business logic, not technical implementation details. Be concise and clear.
-
-Summary:`, 
-		endpoint.Framework,
-		endpoint.Method,
-		endpoint.Path,
-		endpoint.Function,
-		endpoint.RawCode,
-	)
-}
-
-// extractSummary extracts the summary from the Gemini response
-func extractSummary(resp *genai.GenerateContentResponse) string {
+// parseBatchResponse extracts summaries from batch response
+func parseBatchResponse(resp *genai.GenerateContentResponse) []string {
 	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
-		return "No summary available"
+		return []string{}
 	}
-
-	var summary strings.Builder
+	
+	var content strings.Builder
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if text, ok := part.(genai.Text); ok {
-			summary.WriteString(string(text))
+			content.WriteString(string(text))
 		}
 	}
-
-	result := strings.TrimSpace(summary.String())
 	
-	// Ensure summary is not too long
-	if len(result) > 100 {
-		result = result[:97] + "..."
+	// Parse numbered summaries
+	var summaries []string
+	lines := strings.Split(content.String(), "\n")
+	
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Look for patterns like [1], [2], etc.
+		if strings.HasPrefix(line, "[") {
+			if idx := strings.Index(line, "]"); idx > 0 {
+				summary := strings.TrimSpace(line[idx+1:])
+				if summary != "" {
+					// Ensure summary is not too long
+					if len(summary) > 50 {
+						summary = summary[:47] + "..."
+					}
+					summaries = append(summaries, summary)
+				}
+			}
+		}
 	}
 	
-	return result
+	return summaries
+}
+
+// batchEndpoints groups endpoints into batches
+func batchEndpoints(endpoints []*models.Endpoint, batchSize int) [][]*models.Endpoint {
+	var batches [][]*models.Endpoint
+	
+	for i := 0; i < len(endpoints); i += batchSize {
+		end := i + batchSize
+		if end > len(endpoints) {
+			end = len(endpoints)
+		}
+		batches = append(batches, endpoints[i:end])
+	}
+	
+	return batches
 } 

@@ -141,7 +141,7 @@ func (a *Analyzer) extractEndpoint(matches []string, pattern Pattern, filePath s
 			Line:      lineNum,
 			Framework: framework,
 			Language:  getLanguageFromExtension(filepath.Ext(filePath)),
-			RawCode:   extractCodeContext(lines, lineNum-1, 5),
+			RawCode:   extractCodeContext(lines, lineNum-1, 3),
 		}
 	}
 	
@@ -162,7 +162,7 @@ func (a *Analyzer) extractEndpoint(matches []string, pattern Pattern, filePath s
 		Line:      lineNum,
 		Framework: framework,
 		Language:  getLanguageFromExtension(filepath.Ext(filePath)),
-		RawCode:   extractCodeContext(lines, lineNum-1, 10),
+		RawCode:   extractCodeContext(lines, lineNum-1, 5),
 	}
 }
 
@@ -180,7 +180,11 @@ func extractCodeContext(lines []string, centerLine int, contextSize int) string 
 	
 	var context []string
 	for i := start; i <= end; i++ {
-		context = append(context, lines[i])
+		// Skip empty lines and comments to save tokens
+		trimmed := strings.TrimSpace(lines[i])
+		if trimmed != "" && !strings.HasPrefix(trimmed, "//") && !strings.HasPrefix(trimmed, "#") {
+			context = append(context, lines[i])
+		}
 	}
 	
 	return strings.Join(context, "\n")
@@ -213,6 +217,20 @@ func shouldSkipPath(path string) bool {
 		"cache",
 		".cache",
 		"logs",
+		"docs",
+		"documentation",
+		"examples",
+		"migrations",
+		"public",
+		"static",
+		"assets",
+		"bin",
+		"obj",
+	}
+	
+	// Check if file is too large (skip files over 1MB)
+	if info, err := os.Stat(path); err == nil && info.Size() > 1024*1024 {
+		return true
 	}
 	
 	// Check each part of the path
@@ -223,6 +241,15 @@ func shouldSkipPath(path string) bool {
 				return true
 			}
 		}
+		// Skip hidden directories
+		if strings.HasPrefix(part, ".") && part != "." && part != ".." {
+			return true
+		}
+	}
+	
+	// Skip minified files
+	if strings.Contains(path, ".min.") {
+		return true
 	}
 	
 	return false
