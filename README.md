@@ -22,19 +22,39 @@ A powerful CLI tool that automatically discovers REST API endpoints in your code
 
 ## Installation
 
-### From Source
+### Option 1: One-liner Installation (Easiest)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/tarantino19/restgo/main/install.sh | bash
+```
+
+### Option 2: Install with Go
+
+```bash
+go install github.com/tarantino19/restgo@latest
+```
+
+This will install the `restapisummarizer` binary to your `$GOPATH/bin` directory. Make sure `$GOPATH/bin` is in your `$PATH`.
+
+### Option 3: Build from Source
 
 ```bash
 git clone https://github.com/tarantino19/restgo.git
 cd restgo
 go build -o restapisummarizer
+
+# Optional: Install globally
+sudo mv restapisummarizer /usr/local/bin/
 ```
 
-### Using Go Install
+### Option 4: Download Pre-built Binary
 
-```bash
-go install github.com/tarantino19/restgo@latest
-```
+Download the latest release from the [releases page](https://github.com/tarantino19/restgo/releases) and add it to your PATH.
+
+### Requirements
+
+- Go 1.24+ (if building from source)
+- Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
 
 ## Quick Start
 
