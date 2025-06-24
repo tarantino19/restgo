@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>restapisummarizer</id>
+    <version>1.0.0</version>
+    <packageSourceUrl>https://github.com/tarantino19/restgo</packageSourceUrl>
+    <owners>tarantino19</owners>
+    <title>REST API Summarizer</title>
+    <authors>tarantino19</authors>
+    <projectUrl>https://github.com/tarantino19/restgo</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/tarantino19/restgo/main/assets/icon.png</iconUrl>
+    <copyright>2024 tarantino19</copyright>
+    <licenseUrl>https://github.com/tarantino19/restgo/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/tarantino19/restgo</projectSourceUrl>
+    <docsUrl>https://github.com/tarantino19/restgo#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/tarantino19/restgo/issues</bugTrackerUrl>
+    <tags>api rest cli tool analyzer ai gemini</tags>
+    <summary>AI-powered REST API endpoint analyzer and summarizer using Google Gemini</summary>
+    <description>
+REST API Summarizer is a CLI tool that scans your codebase, finds all REST API endpoints, 
+and generates AI-powered summaries of what each endpoint does using Google's Gemini API.
+
+Features:
+- Supports multiple frameworks (Express, FastAPI, Django, Rails, etc.)
+- AI-powered endpoint summaries
+- Fast batch processing
+- Smart caching
+- Beautiful table output
+- Cross-platform support
+    </description>
+    <releaseNotes>https://github.com/tarantino19/restgo/releases</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package> 

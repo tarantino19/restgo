@@ -22,39 +22,103 @@ A powerful CLI tool that automatically discovers REST API endpoints in your code
 
 ## Installation
 
-### Option 1: One-liner Installation (Easiest)
+### 🚀 Quick Install (Recommended)
+
+**One-liner installation** - automatically detects your OS and downloads the right binary:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/tarantino19/restgo/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/tarantino19/restgo/main/scripts/install.sh | bash
 ```
 
-### Option 2: Install with Go
+### 📦 Other Installation Methods
+
+<details>
+<summary><strong>Pre-built Binaries</strong> (No Go required)</summary>
+
+Download from [GitHub Releases](https://github.com/tarantino19/restgo/releases):
+
+**Linux (x64):**
+
+```bash
+curl -L -o restapisummarizer https://github.com/tarantino19/restgo/releases/latest/download/restapisummarizer-linux-amd64
+chmod +x restapisummarizer
+sudo mv restapisummarizer /usr/local/bin/
+```
+
+**macOS (Intel):**
+
+```bash
+curl -L -o restapisummarizer https://github.com/tarantino19/restgo/releases/latest/download/restapisummarizer-darwin-amd64
+chmod +x restapisummarizer
+sudo mv restapisummarizer /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+
+```bash
+curl -L -o restapisummarizer https://github.com/tarantino19/restgo/releases/latest/download/restapisummarizer-darwin-arm64
+chmod +x restapisummarizer
+sudo mv restapisummarizer /usr/local/bin/
+```
+
+**Windows:**
+Download `restapisummarizer-windows-amd64.exe` from the releases page.
+
+</details>
+
+<details>
+<summary><strong>Go Install</strong> (Requires Go 1.24+)</summary>
 
 ```bash
 go install github.com/tarantino19/restgo@latest
 ```
 
-This will install the `restapisummarizer` binary to your `$GOPATH/bin` directory. Make sure `$GOPATH/bin` is in your `$PATH`.
+Make sure `$GOPATH/bin` is in your `$PATH`.
 
-### Option 3: Build from Source
+</details>
+
+<details>
+<summary><strong>Build from Source</strong></summary>
 
 ```bash
 git clone https://github.com/tarantino19/restgo.git
 cd restgo
 go build -o restapisummarizer
-
-# Optional: Install globally
 sudo mv restapisummarizer /usr/local/bin/
 ```
 
-### Option 4: Download Pre-built Binary
+</details>
 
-Download the latest release from the [releases page](https://github.com/tarantino19/restgo/releases) and add it to your PATH.
+<details>
+<summary><strong>Package Managers</strong></summary>
+
+**Homebrew (macOS/Linux):**
+
+```bash
+# Coming soon
+brew install tarantino19/tap/restapisummarizer
+```
+
+**Chocolatey (Windows):**
+
+```bash
+# Coming soon
+choco install restapisummarizer
+```
+
+**Snap (Linux):**
+
+```bash
+# Coming soon
+sudo snap install restapisummarizer
+```
+
+</details>
 
 ### Requirements
 
-- Go 1.24+ (if building from source)
-- Google Gemini API key ([Get one here](https://aistudio.google.com/app/apikey))
+- Google Gemini API key ([Get one free](https://aistudio.google.com/app/apikey))
+- No other dependencies required for pre-built binaries!
 
 ## Quick Start
 
