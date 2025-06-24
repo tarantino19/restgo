@@ -276,6 +276,8 @@ The tool automatically skips these directories to improve performance:
 - `test`, `tests`, `spec`, `specs`
 - `.next`, `out`, `tmp`, `temp`, `cache`, `.cache`, `logs`
 
+Do you need any of these? let me know.
+
 ## Tips & Best Practices
 
 1. **Large Codebases**: The tool handles large projects efficiently by skipping non-source directories
