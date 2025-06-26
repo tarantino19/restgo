@@ -14,7 +14,7 @@ var rootCmd = &cobra.Command{
 	Long: `REST API Summarizer is a CLI tool that scans your codebase,
 finds all REST API endpoints, and generates AI-powered summaries 
 of what each endpoint does using Google's Gemini API.`,
-	Version: "1.0.0",
+	Version: "1.0.1",
 }
 
 func Execute() {
