@@ -3,8 +3,7 @@ package analyzer
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
-	"os"
+	"os" // Keep os for os.ReadFile
 	"path/filepath"
 	"strings"
 
@@ -88,7 +87,7 @@ func (a *Analyzer) AnalyzeDirectory(dir string) ([]*models.Endpoint, error) {
 
 // analyzeFile analyzes a single file for endpoints
 func (a *Analyzer) analyzeFile(filePath string, framework FrameworkPatterns) ([]*models.Endpoint, error) {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath) // Changed from ioutil.ReadFile
 	if err != nil {
 		return nil, err
 	}
@@ -291,4 +290,4 @@ func ReadFileLines(filePath string) ([]string, error) {
 	}
 	
 	return lines, scanner.Err()
-} 
+}
