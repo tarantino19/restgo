@@ -65,7 +65,7 @@ func runSum(cmd *cobra.Command, args []string) {
 	}
 
 	// Initialize cache
-	endpointCache, err := cache.NewCache()
+	endpointCache, err := cache.NewCache(24 * time.Hour) // Added 24 * time.Hour as expiration
 	if err != nil {
 		color.Yellow("Warning: Could not initialize cache: %v", err)
 		// Continue without cache
