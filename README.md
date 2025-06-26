@@ -12,13 +12,12 @@ A powerful CLI tool that automatically discovers REST API endpoints in your code
 
 ## Supported Frameworks
 
-- **JavaScript/TypeScript**: Express.js, Fastify, Koa
-- **Python**: Flask, FastAPI, Django
-- **Go**: Gin, Echo, Gorilla Mux
-- **Java**: Spring Boot, JAX-RS
+- **JavaScript/TypeScript**: Express.js
+- **Python**: Flask, FastAPI
+- **Go**: Gin, Echo
+- **Java**: Spring
 - **Ruby**: Ruby on Rails
-- **C#**: ASP.NET Core
-- **PHP**: Laravel, Symfony (coming soon)
+- **C#**: ASP.NET
 
 ## Installation
 
