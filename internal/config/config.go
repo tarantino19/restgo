@@ -31,8 +31,8 @@ func InitConfig() {
 			os.Exit(1)
 		}
 
-			// Search config in home directory with name ".restapisummarizer".
-	configPath := filepath.Join(home, ".restapisummarizer")
+		// Search config in home directory with name ".restapisummarizer".
+		configPath := filepath.Join(home, ".restapisummarizer")
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			os.Mkdir(configPath, 0755)
 		}
@@ -67,20 +67,20 @@ func GetConfig() *Config {
 // SetAPIKey saves the API key to the config file
 func SetAPIKey(apiKey string) error {
 	viper.Set("gemini_api_key", apiKey)
-	
+
 	// Ensure config directory exists
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-	
+
 	configPath := filepath.Join(home, ".restapisummarizer")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		if err := os.Mkdir(configPath, 0755); err != nil {
 			return err
 		}
 	}
-	
+
 	configFile := filepath.Join(configPath, "config.yaml")
 	return viper.WriteConfigAs(configFile)
 }
@@ -91,12 +91,12 @@ func GetAPIKey() string {
 	if apiKey := os.Getenv("GEMINI_API_KEY"); apiKey != "" {
 		return apiKey
 	}
-	
+
 	// Then check config
 	if cfg != nil && cfg.GeminiAPIKey != "" {
 		return cfg.GeminiAPIKey
 	}
-	
+
 	// Finally check viper directly
 	return viper.GetString("gemini_api_key")
-} 
+}

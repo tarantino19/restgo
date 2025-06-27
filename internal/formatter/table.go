@@ -23,7 +23,7 @@ func FormatEndpointsTable(endpoints []*models.Endpoint) {
 
 	// Create table
 	table := tablewriter.NewWriter(os.Stdout)
-	
+
 	// Add header
 	table.Append([]string{
 		color.CyanString("Method"),
@@ -38,13 +38,13 @@ func FormatEndpointsTable(endpoints []*models.Endpoint) {
 		path := endpoint.Path
 		file := fmt.Sprintf("%s:%d", shortenPath(endpoint.File), endpoint.Line)
 		summary := endpoint.Summary
-		
+
 		table.Append([]string{method, path, file, summary})
 	}
 
 	// Render table
 	table.Render()
-	
+
 	// Print grouped by file
 	printGroupedByFile(endpoints)
 }
@@ -61,13 +61,13 @@ func shortenPath(path string) string {
 // printGroupedByFile prints endpoints grouped by file
 func printGroupedByFile(endpoints []*models.Endpoint) {
 	color.Green("\n📁 Endpoints by File:\n")
-	
+
 	// Group by file
 	fileMap := make(map[string][]*models.Endpoint)
 	for _, endpoint := range endpoints {
 		fileMap[endpoint.File] = append(fileMap[endpoint.File], endpoint)
 	}
-	
+
 	// Print each file's endpoints
 	for file, eps := range fileMap {
 		color.Cyan("  %s (%d endpoints)\n", file, len(eps))
@@ -93,4 +93,4 @@ func colorizeMethodSimple(method string) string {
 	default:
 		return method
 	}
-} 
+}

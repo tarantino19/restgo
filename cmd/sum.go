@@ -23,14 +23,14 @@ var (
 var sumCmd = &cobra.Command{
 	Use:   "sum [directory]",
 	Short: "Analyze REST API endpoints in a directory",
-	Long: `Scans the specified directory (or current directory if not specified) 
+	Long: `Scans the specified directory (or current directory if not specified)
 for REST API endpoints and generates AI-powered summaries using Gemini API.`,
 	Args: cobra.MaximumNArgs(1),
 	Run:  runSum,
 }
 
 func init() {
-	rootCmd.AddCommand(sumCmd)
+	rootCmd.AddCommand(sumCmd) //viper native command AddComand
 	sumCmd.Flags().BoolVar(&noCache, "no-cache", false, "Disable cache and regenerate all summaries")
 }
 
@@ -73,11 +73,11 @@ func runSum(cmd *cobra.Command, args []string) {
 
 	// Create analyzer
 	analyzer := analyzer.NewAnalyzer()
-	
+
 	// Analyze directory
 	color.Green("\n🚀 Starting REST API analysis...\n")
 	startTime := time.Now()
-	
+
 	endpoints, err := analyzer.AnalyzeDirectory(absDir)
 	if err != nil {
 		color.Red("Error analyzing directory: %v", err)
@@ -93,7 +93,7 @@ func runSum(cmd *cobra.Command, args []string) {
 	// Check cache for existing summaries
 	var needsSummary []*models.Endpoint
 	cachedCount := 0
-	
+
 	if endpointCache != nil && !noCache {
 		for _, endpoint := range endpoints {
 			fileHash := cache.HashFile(endpoint.RawCode)
@@ -104,7 +104,7 @@ func runSum(cmd *cobra.Command, args []string) {
 				needsSummary = append(needsSummary, endpoint)
 			}
 		}
-		
+
 		if cachedCount > 0 {
 			color.Blue("📦 Using %d cached summaries\n", cachedCount)
 		}
@@ -126,17 +126,17 @@ func runSum(cmd *cobra.Command, args []string) {
 		// Generate summaries
 		color.Blue("📝 Generating summaries for %d new endpoints...\n", len(needsSummary))
 		ctx := context.Background()
-		
+
 		// Add timeout for the entire operation
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute) // Reduced from 10 minutes
 		defer cancel()
-		
+
 		err = geminiClient.SummarizeEndpoints(ctx, needsSummary)
 		if err != nil {
 			color.Red("Error generating summaries: %v", err)
 			// Continue anyway - we can still show endpoints without summaries
 		}
-		
+
 		// Cache the new summaries
 		if endpointCache != nil && !noCache {
 			for _, endpoint := range needsSummary {
@@ -150,18 +150,18 @@ func runSum(cmd *cobra.Command, args []string) {
 
 	// Display results
 	formatter.FormatEndpointsTable(endpoints)
-	
+
 	// Show statistics
 	duration := time.Since(startTime)
 	color.Green("\n✅ Analysis completed in %s\n", duration.Round(time.Second))
-	
+
 	if cachedCount > 0 {
 		percentage := (cachedCount * 100) / len(endpoints)
 		color.HiBlack("   • %d/%d summaries from cache (%d%%)", cachedCount, len(endpoints), percentage)
 	}
-	
+
 	if len(needsSummary) > 0 {
 		tokensEstimate := len(needsSummary) * 50 // Rough estimate
 		color.HiBlack("   • Generated %d new summaries (~%d tokens used)", len(needsSummary), tokensEstimate)
 	}
-} 
+}
