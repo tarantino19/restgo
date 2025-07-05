@@ -28,15 +28,15 @@ func (a *Analyzer) AnalyzeDirectory(dir string) ([]*models.Endpoint, error) {
 	var endpoints []*models.Endpoint
 	var filesAnalyzed int
 	var currentDir string
-	
+
 	color.Blue("🔍 Scanning directory tree: %s", dir)
 	color.Blue("This will recursively scan all subdirectories...\n")
-	
+
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Track current directory for progress display
 		dir := filepath.Dir(path)
 		if dir != currentDir && info.IsDir() && !strings.HasPrefix(info.Name(), ".") {
@@ -46,17 +46,17 @@ func (a *Analyzer) AnalyzeDirectory(dir string) ([]*models.Endpoint, error) {
 				color.HiBlack("  📂 Entering: %s", path)
 			}
 		}
-		
+
 		// Skip directories and hidden files
 		if info.IsDir() || strings.HasPrefix(info.Name(), ".") {
 			return nil
 		}
-		
+
 		// Skip common non-source directories
 		if shouldSkipPath(path) {
 			return nil
 		}
-		
+
 		// Check if file matches any framework patterns
 		ext := filepath.Ext(path)
 		for _, framework := range a.patterns {
@@ -73,14 +73,14 @@ func (a *Analyzer) AnalyzeDirectory(dir string) ([]*models.Endpoint, error) {
 				}
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("error walking directory: %w", err)
 	}
-	
+
 	color.Green("\n✓ Scan complete! Analyzed %d files, found %d endpoints", filesAnalyzed, len(endpoints))
 	return endpoints, nil
 }
@@ -91,10 +91,10 @@ func (a *Analyzer) analyzeFile(filePath string, framework FrameworkPatterns) ([]
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var endpoints []*models.Endpoint
 	lines := strings.Split(string(content), "\n")
-	
+
 	for lineNum, line := range lines {
 		for _, pattern := range framework.Patterns {
 			matches := pattern.Regex.FindStringSubmatch(line)
@@ -106,30 +106,30 @@ func (a *Analyzer) analyzeFile(filePath string, framework FrameworkPatterns) ([]
 			}
 		}
 	}
-	
+
 	if len(endpoints) > 0 {
 		// Show relative path for better visibility of subdirectories
 		cwd, _ := os.Getwd()
 		relPath, _ := filepath.Rel(cwd, filePath)
 		color.Cyan("  ✓ Found %d endpoints in %s", len(endpoints), relPath)
 	}
-	
+
 	return endpoints, nil
 }
 
 // extractEndpoint extracts endpoint information from regex matches
 func (a *Analyzer) extractEndpoint(matches []string, pattern Pattern, filePath string, lineNum int, lines []string, framework string) *models.Endpoint {
 	var method, path string
-	
+
 	// Extract method and path based on pattern configuration
 	if pattern.MethodIndex > 0 && pattern.MethodIndex < len(matches) {
 		method = strings.ToUpper(matches[pattern.MethodIndex])
 	}
-	
+
 	if pattern.PathIndex > 0 && pattern.PathIndex < len(matches) {
 		path = matches[pattern.PathIndex]
 	}
-	
+
 	// Handle special cases
 	if pattern.MethodIndex == 0 && strings.Contains(lines[lineNum-1], "resources") {
 		// Rails resources generates multiple endpoints
@@ -143,17 +143,17 @@ func (a *Analyzer) extractEndpoint(matches []string, pattern Pattern, filePath s
 			RawCode:   extractCodeContext(lines, lineNum-1, 3),
 		}
 	}
-	
+
 	// Default to GET if method not found (e.g., Flask without methods specified)
 	if method == "" && path != "" {
 		method = "GET"
 	}
-	
+
 	// Skip if we couldn't extract both method and path
 	if method == "" || path == "" {
 		return nil
 	}
-	
+
 	return &models.Endpoint{
 		Method:    method,
 		Path:      path,
@@ -171,12 +171,12 @@ func extractCodeContext(lines []string, centerLine int, contextSize int) string 
 	if start < 0 {
 		start = 0
 	}
-	
+
 	end := centerLine + contextSize
 	if end >= len(lines) {
 		end = len(lines) - 1
 	}
-	
+
 	var context []string
 	for i := start; i <= end; i++ {
 		// Skip empty lines and comments to save tokens
@@ -185,7 +185,7 @@ func extractCodeContext(lines []string, centerLine int, contextSize int) string 
 			context = append(context, lines[i])
 		}
 	}
-	
+
 	return strings.Join(context, "\n")
 }
 
@@ -226,12 +226,12 @@ func shouldSkipPath(path string) bool {
 		"bin",
 		"obj",
 	}
-	
+
 	// Check if file is too large (skip files over 1MB)
 	if info, err := os.Stat(path); err == nil && info.Size() > 1024*1024 {
 		return true
 	}
-	
+
 	// Check each part of the path
 	parts := strings.Split(path, string(os.PathSeparator))
 	for _, part := range parts {
@@ -245,12 +245,12 @@ func shouldSkipPath(path string) bool {
 			return true
 		}
 	}
-	
+
 	// Skip minified files
 	if strings.Contains(path, ".min.") {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -267,11 +267,11 @@ func getLanguageFromExtension(ext string) string {
 		".cs":   "C#",
 		".php":  "PHP",
 	}
-	
+
 	if lang, ok := languages[ext]; ok {
 		return lang
 	}
-	
+
 	return "Unknown"
 }
 
@@ -282,12 +282,12 @@ func ReadFileLines(filePath string) ([]string, error) {
 		return nil, err
 	}
 	defer file.Close()
-	
+
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	
+
 	return lines, scanner.Err()
 }

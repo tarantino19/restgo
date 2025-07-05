@@ -8,6 +8,10 @@ restapisummarizer
 # Test binary, built with `go test -c`
 *.test
 
+
+.CLAUDE.md
+/CLAUDE.md
+
 # Output of the go toolchain
 .cache/
 .vscode/
